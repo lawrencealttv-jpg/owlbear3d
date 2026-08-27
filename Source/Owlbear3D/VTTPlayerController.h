@@ -69,11 +69,17 @@ private:
     int32 InitiativeIndex = 0;
     bool bAutosavePending = false;
     float AutosaveAtTime = 0.0f;
+    int32 CurrentSceneIndex = 1;
+    FVTTMapSnapshot DefaultSceneSnapshot;
+    FString JoinAddress = TEXT("127.0.0.1");
     TSharedPtr<SWidget> ToolbarWidget;
 
     void PrimaryClick();
     void PrimaryRelease();
     void ApplyBuildAtCursor(bool bStartingStroke);
+
+    UFUNCTION(Server, Reliable)
+    void ServerMoveActor(AActor* Actor, FVector NewLocation);
     void SpawnHero();
     void SpawnMonster();
     void SpawnPieceAtCursor(const FString& PieceName, int32 MaxHP, const FLinearColor& Colour);
@@ -97,6 +103,11 @@ private:
     void SaveMap();
     void WriteSaveSlot(bool bShowMessage);
     void LoadMap();
+    void PreviousScene();
+    void NextScene();
+    void SwitchScene(int32 NewSceneIndex);
+    void HostSession();
+    void JoinSession();
     void Undo();
     void Redo();
     bool GetCursorGrid(FIntPoint& OutGrid, FVector& OutWorld) const;
@@ -108,6 +119,7 @@ private:
     void PushUndoState();
     FString GetBuildToolName() const;
     FString GetToolbarStatus() const;
+    FString GetSaveSlotName() const;
     void SetBuildTool(EVTTBuildTool NewTool);
     void BuildToolbar();
     void RemoveToolbar();

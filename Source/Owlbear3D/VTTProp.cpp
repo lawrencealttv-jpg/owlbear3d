@@ -4,6 +4,7 @@
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Net/UnrealNetwork.h"
 #include "UObject/ConstructorHelpers.h"
 
 AVTTProp::AVTTProp()
@@ -47,6 +48,12 @@ AVTTProp::AVTTProp()
     }
 
     InitialiseProp(EVTTPropType::Crate);
+}
+
+void AVTTProp::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(AVTTProp, PropType);
 }
 
 void AVTTProp::InitialiseProp(EVTTPropType NewType)
@@ -98,6 +105,7 @@ void AVTTProp::InitialiseProp(EVTTPropType NewType)
                 : FLinearColor(0.28f, 0.105f, 0.035f));
         }
     }
+    ForceNetUpdate();
 }
 
 void AVTTProp::SetSelected(bool bNewSelected)
@@ -120,4 +128,9 @@ FString AVTTProp::GetPropName() const
     case EVTTPropType::Chest: return TEXT("Chest");
     default: return TEXT("Crate");
     }
+}
+
+void AVTTProp::OnRep_PropType()
+{
+    InitialiseProp(PropType);
 }

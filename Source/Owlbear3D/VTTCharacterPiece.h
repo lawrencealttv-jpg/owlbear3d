@@ -18,6 +18,7 @@ public:
     AVTTCharacterPiece();
 
     virtual void Tick(float DeltaSeconds) override;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     UFUNCTION(BlueprintCallable, Category="VTT|Piece")
     void InitialisePiece(const FString& NewName, int32 NewMaxHP, const FLinearColor& NewColour);
@@ -36,25 +37,25 @@ public:
     void ToggleHiddenFromPlayers();
     void SetSizeSquares(int32 NewSize);
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VTT|Piece")
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_PieceData, Category="VTT|Piece")
     FString DisplayName = TEXT("Adventurer");
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VTT|Piece")
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_PieceData, Category="VTT|Piece")
     int32 MaxHP = 20;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VTT|Piece")
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_PieceData, Category="VTT|Piece")
     int32 CurrentHP = 20;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VTT|Piece")
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_PieceData, Category="VTT|Piece")
     FLinearColor PieceColour = FLinearColor::White;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VTT|Piece")
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_PieceData, Category="VTT|Piece")
     int32 SizeSquares = 1;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VTT|Piece")
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_PieceData, Category="VTT|Piece")
     FString ConditionText;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VTT|Piece")
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_PieceData, Category="VTT|Piece")
     bool bHiddenFromPlayers = false;
 
 private:
@@ -87,4 +88,7 @@ private:
 
     void UpdateLabels();
     void ApplyColour(const FLinearColor& NewColour);
+
+    UFUNCTION()
+    void OnRep_PieceData();
 };

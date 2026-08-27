@@ -7,6 +7,9 @@
 AVTTCameraPawn::AVTTCameraPawn()
 {
     PrimaryActorTick.bCanEverTick = true;
+    bReplicates = true;
+    SetReplicateMovement(false);
+    bOnlyRelevantToOwner = true;
 
     SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
     SetRootComponent(SceneRoot);
@@ -73,4 +76,3 @@ void AVTTCameraPawn::RotateRight()
 {
     AddActorWorldRotation(FRotator(0.0f, 45.0f, 0.0f));
 }
-

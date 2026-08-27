@@ -12,6 +12,7 @@
 #include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
 #include "Widgets/Input/SButton.h"
+#include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Layout/SUniformGridPanel.h"
@@ -20,7 +21,7 @@
 
 namespace
 {
-    const FString SaveSlotName = TEXT("Owlbear3D_Autosave");
+    const FString SaveSlotPrefix = TEXT("Owlbear3D_Scene_");
 }
 
 AVTTPlayerController::AVTTPlayerController()
@@ -44,6 +45,15 @@ void AVTTPlayerController::BeginPlay()
     {
         Board = *It;
         break;
+    }
+
+    DefaultSceneSnapshot = CaptureSnapshot();
+    if (HasAuthority() && UGameplayStatics::DoesSaveGameExist(GetSaveSlotName(), 0))
+    {
+        if (UVTTSaveGame* SaveData = Cast<UVTTSaveGame>(UGameplayStatics::LoadGameFromSlot(GetSaveSlotName(), 0)))
+        {
+            ApplySnapshot(SaveData->Map);
+        }
     }
 
     ShowControls();
@@ -143,12 +153,26 @@ void AVTTPlayerController::PrimaryClick()
     if (SelectedPiece && Board->IsCellActive(Grid))
     {
         PushUndoState();
-        SelectedPiece->MoveToGridLocation(GridWorld);
+        if (HasAuthority()) SelectedPiece->MoveToGridLocation(GridWorld);
+        else ServerMoveActor(SelectedPiece, GridWorld);
     }
     else if (SelectedProp && Board->IsCellActive(Grid))
     {
         PushUndoState();
-        SelectedProp->SetActorLocation(GridWorld);
+        if (HasAuthority()) SelectedProp->SetActorLocation(GridWorld);
+        else ServerMoveActor(SelectedProp, GridWorld);
+    }
+}
+
+void AVTTPlayerController::ServerMoveActor_Implementation(AActor* Actor, FVector NewLocation)
+{
+    if (AVTTCharacterPiece* Piece = Cast<AVTTCharacterPiece>(Actor))
+    {
+        Piece->MoveToGridLocation(NewLocation);
+    }
+    else if (AVTTProp* Prop = Cast<AVTTProp>(Actor))
+    {
+        Prop->SetActorLocation(NewLocation);
     }
 }
 
@@ -160,7 +184,7 @@ void AVTTPlayerController::PrimaryRelease()
 
 void AVTTPlayerController::ApplyBuildAtCursor(bool bStartingStroke)
 {
-    if (!Board)
+    if (!HasAuthority() || !Board)
     {
         return;
     }
@@ -242,6 +266,7 @@ void AVTTPlayerController::SpawnMonster()
 
 void AVTTPlayerController::SpawnPieceAtCursor(const FString& PieceName, int32 MaxHP, const FLinearColor& Colour)
 {
+    if (!HasAuthority()) return;
     FIntPoint Grid;
     FVector GridWorld;
     if (!GetCursorGrid(Grid, GridWorld) || !Board->IsCellActive(Grid))
@@ -262,6 +287,7 @@ void AVTTPlayerController::SpawnPieceAtCursor(const FString& PieceName, int32 Ma
 
 void AVTTPlayerController::DamageSelected()
 {
+    if (!HasAuthority()) return;
     if (SelectedPiece)
     {
         PushUndoState();
@@ -271,6 +297,7 @@ void AVTTPlayerController::DamageSelected()
 
 void AVTTPlayerController::HealSelected()
 {
+    if (!HasAuthority()) return;
     if (SelectedPiece)
     {
         PushUndoState();
@@ -280,6 +307,7 @@ void AVTTPlayerController::HealSelected()
 
 void AVTTPlayerController::DeleteSelected()
 {
+    if (!HasAuthority()) return;
     if (SelectedPiece)
     {
         PushUndoState();
@@ -298,6 +326,7 @@ void AVTTPlayerController::DeleteSelected()
 
 void AVTTPlayerController::RotateSelected()
 {
+    if (!HasAuthority()) return;
     if (!SelectedPiece && !SelectedProp)
     {
         return;
@@ -315,6 +344,7 @@ void AVTTPlayerController::RotateSelected()
 
 void AVTTPlayerController::DuplicateSelected()
 {
+    if (!HasAuthority()) return;
     if (!SelectedPiece && !SelectedProp)
     {
         return;
@@ -345,6 +375,7 @@ void AVTTPlayerController::DuplicateSelected()
 
 void AVTTPlayerController::ToggleBuildMode()
 {
+    if (!HasAuthority()) return;
     bBuildMode = !bBuildMode;
     if (GEngine)
     {
@@ -380,6 +411,7 @@ void AVTTPlayerController::CycleProp()
 
 void AVTTPlayerController::CycleSelectedSize()
 {
+    if (!HasAuthority()) return;
     if (SelectedPiece)
     {
         PushUndoState();
@@ -389,6 +421,7 @@ void AVTTPlayerController::CycleSelectedSize()
 
 void AVTTPlayerController::CycleSelectedCondition()
 {
+    if (!HasAuthority()) return;
     if (SelectedPiece)
     {
         PushUndoState();
@@ -398,6 +431,7 @@ void AVTTPlayerController::CycleSelectedCondition()
 
 void AVTTPlayerController::ToggleSelectedHidden()
 {
+    if (!HasAuthority()) return;
     if (SelectedPiece)
     {
         PushUndoState();
@@ -507,7 +541,7 @@ void AVTTPlayerController::SaveMap()
 
 void AVTTPlayerController::WriteSaveSlot(bool bShowMessage)
 {
-    if (!Board)
+    if (!HasAuthority() || !Board)
     {
         return;
     }
@@ -520,7 +554,7 @@ void AVTTPlayerController::WriteSaveSlot(bool bShowMessage)
 
     SaveData->Map = CaptureSnapshot();
 
-    const bool bSaved = UGameplayStatics::SaveGameToSlot(SaveData, SaveSlotName, 0);
+    const bool bSaved = UGameplayStatics::SaveGameToSlot(SaveData, GetSaveSlotName(), 0);
     if (bShowMessage && GEngine)
     {
         GEngine->AddOnScreenDebugMessage(23, 3.0f, bSaved ? FColor::Green : FColor::Red,
@@ -530,7 +564,8 @@ void AVTTPlayerController::WriteSaveSlot(bool bShowMessage)
 
 void AVTTPlayerController::LoadMap()
 {
-    UVTTSaveGame* SaveData = Cast<UVTTSaveGame>(UGameplayStatics::LoadGameFromSlot(SaveSlotName, 0));
+    if (!HasAuthority()) return;
+    UVTTSaveGame* SaveData = Cast<UVTTSaveGame>(UGameplayStatics::LoadGameFromSlot(GetSaveSlotName(), 0));
     if (!Board || !SaveData)
     {
         if (GEngine)
@@ -549,8 +584,62 @@ void AVTTPlayerController::LoadMap()
     }
 }
 
+void AVTTPlayerController::PreviousScene()
+{
+    SwitchScene(CurrentSceneIndex <= 1 ? 9 : CurrentSceneIndex - 1);
+}
+
+void AVTTPlayerController::NextScene()
+{
+    SwitchScene(CurrentSceneIndex >= 9 ? 1 : CurrentSceneIndex + 1);
+}
+
+void AVTTPlayerController::SwitchScene(int32 NewSceneIndex)
+{
+    if (!HasAuthority()) return;
+    WriteSaveSlot(false);
+    CurrentSceneIndex = FMath::Clamp(NewSceneIndex, 1, 9);
+    UndoStack.Empty();
+    RedoStack.Empty();
+    Initiative.Empty();
+    InitiativeIndex = 0;
+    bAutosavePending = false;
+
+    if (UGameplayStatics::DoesSaveGameExist(GetSaveSlotName(), 0))
+    {
+        if (UVTTSaveGame* SaveData = Cast<UVTTSaveGame>(UGameplayStatics::LoadGameFromSlot(GetSaveSlotName(), 0)))
+        {
+            ApplySnapshot(SaveData->Map);
+        }
+    }
+    else
+    {
+        ApplySnapshot(DefaultSceneSnapshot);
+    }
+    if (GEngine)
+    {
+        GEngine->AddOnScreenDebugMessage(33, 3.0f, FColor::Green,
+            FString::Printf(TEXT("SCENE %d"), CurrentSceneIndex));
+    }
+}
+
+void AVTTPlayerController::HostSession()
+{
+    WriteSaveSlot(false);
+    UGameplayStatics::OpenLevel(this, FName(TEXT("/Engine/Maps/Entry")), true, TEXT("listen"));
+}
+
+void AVTTPlayerController::JoinSession()
+{
+    if (!JoinAddress.IsEmpty())
+    {
+        ClientTravel(JoinAddress, TRAVEL_Absolute);
+    }
+}
+
 void AVTTPlayerController::Undo()
 {
+    if (!HasAuthority()) return;
     if (UndoStack.IsEmpty())
     {
         return;
@@ -567,6 +656,7 @@ void AVTTPlayerController::Undo()
 
 void AVTTPlayerController::Redo()
 {
+    if (!HasAuthority()) return;
     if (RedoStack.IsEmpty())
     {
         return;
@@ -739,6 +829,7 @@ void AVTTPlayerController::ApplySnapshot(const FVTTMapSnapshot& Snapshot)
 
 void AVTTPlayerController::PushUndoState()
 {
+    if (!HasAuthority()) return;
     UndoStack.Add(CaptureSnapshot());
     if (UndoStack.Num() > 50)
     {
@@ -779,7 +870,7 @@ FString AVTTPlayerController::GetToolbarStatus() const
 
     if (!bBuildMode)
     {
-        return FString::Printf(TEXT("PLAY MODE  |  %s"), *Selection);
+        return FString::Printf(TEXT("SCENE %d  |  PLAY MODE  |  %s"), CurrentSceneIndex, *Selection);
     }
 
     FString Extra;
@@ -790,11 +881,17 @@ FString AVTTPlayerController::GetToolbarStatus() const
             Extra = TEXT("  |  ") + PropEnum->GetNameStringByValue(static_cast<int64>(CurrentPropType));
         }
     }
-    return FString::Printf(TEXT("BUILD: %s%s  |  %s"), *GetBuildToolName(), *Extra, *Selection);
+    return FString::Printf(TEXT("SCENE %d  |  BUILD: %s%s  |  %s"), CurrentSceneIndex, *GetBuildToolName(), *Extra, *Selection);
+}
+
+FString AVTTPlayerController::GetSaveSlotName() const
+{
+    return SaveSlotPrefix + FString::FromInt(CurrentSceneIndex);
 }
 
 void AVTTPlayerController::SetBuildTool(EVTTBuildTool NewTool)
 {
+    if (!HasAuthority()) return;
     BuildTool = NewTool;
     bBuildMode = true;
     bPainting = false;
@@ -874,6 +971,26 @@ void AVTTPlayerController::BuildToolbar()
                     + SUniformGridPanel::Slot(7, 2)[MakeButton(TEXT("D20"), [](AVTTPlayerController* C){ C->RollD20(); })]
                     + SUniformGridPanel::Slot(6, 0)[MakeButton(TEXT("INIT"), [](AVTTPlayerController* C){ C->AddSelectedToInitiative(); })]
                     + SUniformGridPanel::Slot(7, 0)[MakeButton(TEXT("NEXT TURN"), [](AVTTPlayerController* C){ C->NextInitiativeTurn(); })]
+                    + SUniformGridPanel::Slot(6, 3)[MakeButton(TEXT("< SCENE"), [](AVTTPlayerController* C){ C->PreviousScene(); })]
+                    + SUniformGridPanel::Slot(7, 3)[MakeButton(TEXT("SCENE >"), [](AVTTPlayerController* C){ C->NextScene(); })]
+                    + SUniformGridPanel::Slot(0, 3)[MakeButton(TEXT("HOST"), [](AVTTPlayerController* C){ C->HostSession(); })]
+                    + SUniformGridPanel::Slot(1, 3)[MakeButton(TEXT("JOIN"), [](AVTTPlayerController* C){ C->JoinSession(); })]
+                    + SUniformGridPanel::Slot(2, 3)
+                    [
+                        SNew(SEditableTextBox)
+                        .Text_Lambda([WeakThis]()
+                        {
+                            const AVTTPlayerController* Controller = WeakThis.Get();
+                            return FText::FromString(Controller ? Controller->JoinAddress : TEXT("127.0.0.1"));
+                        })
+                        .OnTextChanged_Lambda([WeakThis](const FText& NewText)
+                        {
+                            if (AVTTPlayerController* Controller = WeakThis.Get())
+                            {
+                                Controller->JoinAddress = NewText.ToString();
+                            }
+                        })
+                    ]
                 ]
             ]
         ];

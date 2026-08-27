@@ -3,11 +3,14 @@
 #include "Components/BoxComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Net/UnrealNetwork.h"
 #include "UObject/ConstructorHelpers.h"
 
 AVTTBoard::AVTTBoard()
 {
     PrimaryActorTick.bCanEverTick = false;
+    bReplicates = true;
+    SetReplicateMovement(false);
 
     SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
     SetRootComponent(SceneRoot);
@@ -43,6 +46,15 @@ AVTTBoard::AVTTBoard()
         DoorInstances->SetStaticMesh(CubeMesh.Object);
         FogInstances->SetStaticMesh(CubeMesh.Object);
     }
+}
+
+void AVTTBoard::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(AVTTBoard, RepActiveCells);
+    DOREPLIFETIME(AVTTBoard, RepWallEdges);
+    DOREPLIFETIME(AVTTBoard, RepDoorEdges);
+    DOREPLIFETIME(AVTTBoard, RepFoggedCells);
 }
 
 void AVTTBoard::BeginPlay()
@@ -99,6 +111,7 @@ void AVTTBoard::BuildInitialRoom()
     FoggedCells.Empty();
     RebuildDoorInstances();
     RebuildFogInstances();
+    SyncReplicatedLayout();
 }
 
 bool AVTTBoard::WorldToGrid(const FVector& WorldLocation, FIntPoint& OutGrid) const
@@ -151,6 +164,7 @@ void AVTTBoard::ToggleCell(const FIntPoint& Grid)
     }
 
     RebuildFloorInstances();
+    SyncReplicatedLayout();
 }
 
 void AVTTBoard::SetCellActive(const FIntPoint& Grid, bool bActive)
@@ -169,6 +183,7 @@ void AVTTBoard::SetCellActive(const FIntPoint& Grid, bool bActive)
         ActiveCells.Remove(Grid);
     }
     RebuildFloorInstances();
+    SyncReplicatedLayout();
 }
 
 bool AVTTBoard::ToggleWallAtWorldLocation(const FVector& WorldLocation)
@@ -236,6 +251,7 @@ void AVTTBoard::SetWall(const FIntVector& Edge, bool bActive)
     }
     RebuildWallInstances();
     RebuildDoorInstances();
+    SyncReplicatedLayout();
 }
 
 void AVTTBoard::SetDoor(const FIntVector& Edge, bool bActive)
@@ -256,6 +272,7 @@ void AVTTBoard::SetDoor(const FIntVector& Edge, bool bActive)
     }
     RebuildWallInstances();
     RebuildDoorInstances();
+    SyncReplicatedLayout();
 }
 
 void AVTTBoard::SetFogged(const FIntPoint& Grid, bool bFogged)
@@ -273,6 +290,7 @@ void AVTTBoard::SetFogged(const FIntPoint& Grid, bool bFogged)
         FoggedCells.Remove(Grid);
     }
     RebuildFogInstances();
+    SyncReplicatedLayout();
 }
 
 bool AVTTBoard::IsFogged(const FIntPoint& Grid) const
@@ -344,6 +362,7 @@ void AVTTBoard::ApplyLayout(const TArray<FIntPoint>& NewActiveCells, const TArra
     RebuildWallInstances();
     RebuildDoorInstances();
     RebuildFogInstances();
+    SyncReplicatedLayout();
 }
 
 void AVTTBoard::RebuildFloorInstances()
@@ -422,4 +441,33 @@ bool AVTTBoard::IsValidEdge(const FIntVector& Edge) const
     const bool bHorizontalValid = Edge.Z == 0 && Edge.X >= 0 && Edge.X < GridWidth && Edge.Y >= 0 && Edge.Y <= GridHeight;
     const bool bVerticalValid = Edge.Z == 1 && Edge.X >= 0 && Edge.X <= GridWidth && Edge.Y >= 0 && Edge.Y < GridHeight;
     return bHorizontalValid || bVerticalValid;
+}
+
+void AVTTBoard::SyncReplicatedLayout()
+{
+    if (!HasAuthority())
+    {
+        return;
+    }
+    RepActiveCells = ActiveCells.Array();
+    RepWallEdges = WallEdges.Array();
+    RepDoorEdges = DoorEdges.Array();
+    RepFoggedCells = FoggedCells.Array();
+    ForceNetUpdate();
+}
+
+void AVTTBoard::OnRep_Layout()
+{
+    ActiveCells.Empty();
+    for (const FIntPoint& Cell : RepActiveCells) ActiveCells.Add(Cell);
+    WallEdges.Empty();
+    for (const FIntVector& Edge : RepWallEdges) WallEdges.Add(Edge);
+    DoorEdges.Empty();
+    for (const FIntVector& Edge : RepDoorEdges) DoorEdges.Add(Edge);
+    FoggedCells.Empty();
+    for (const FIntPoint& Cell : RepFoggedCells) FoggedCells.Add(Cell);
+    RebuildFloorInstances();
+    RebuildWallInstances();
+    RebuildDoorInstances();
+    RebuildFogInstances();
 }

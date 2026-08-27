@@ -15,6 +15,7 @@ class OWLBEAR3D_API AVTTBoard : public AActor
 
 public:
     AVTTBoard();
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VTT|Grid")
     int32 GridWidth = 16;
@@ -84,10 +85,26 @@ private:
     TSet<FIntVector> DoorEdges;
     TSet<FIntPoint> FoggedCells;
 
+    UPROPERTY(ReplicatedUsing=OnRep_Layout)
+    TArray<FIntPoint> RepActiveCells;
+
+    UPROPERTY(ReplicatedUsing=OnRep_Layout)
+    TArray<FIntVector> RepWallEdges;
+
+    UPROPERTY(ReplicatedUsing=OnRep_Layout)
+    TArray<FIntVector> RepDoorEdges;
+
+    UPROPERTY(ReplicatedUsing=OnRep_Layout)
+    TArray<FIntPoint> RepFoggedCells;
+
     void BuildInitialRoom();
     void RebuildFloorInstances();
     void RebuildWallInstances();
     void RebuildDoorInstances();
     void RebuildFogInstances();
     bool IsValidEdge(const FIntVector& Edge) const;
+    void SyncReplicatedLayout();
+
+    UFUNCTION()
+    void OnRep_Layout();
 };

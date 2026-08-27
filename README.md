@@ -21,6 +21,11 @@ The project creates its first playable room entirely at runtime. No custom map o
 - Autosave after editing
 - On-screen GM toolbar
 - Distance ruler, d20 roller, and lightweight initiative tracker
+- Nine persistent campaign scenes
+- Replicated board, doors, fog, pieces, props, HP, sizes, and conditions
+- Direct host/join multiplayer foundation
+- GM-only editing with player piece movement
+- Hidden pieces remain visible to the GM but disappear for remote players
 - Save/load floors, walls, pieces, colours, names, and HP
 - Multiplayer-ready actor structure (network session UI comes later)
 
@@ -52,6 +57,14 @@ The project creates its first playable room entirely at runtime. No custom map o
 | `WASD` | Pan camera |
 | `Q` / `E` | Rotate camera 45 degrees |
 | Mouse wheel | Zoom |
+
+## Multiplayer alpha
+
+1. The GM clicks **Host**. The current scene saves and reloads as a listen server.
+2. Players enter the GM's IP address (optionally `address:7777`) and click **Join**.
+3. LAN works directly. Internet hosting currently requires UDP port `7777` forwarded to the GM, or a shared virtual LAN such as Tailscale.
+
+This is direct-connect alpha networking. Epic Online Services invitations and account-free join codes come after the core replication test.
 
 ## Open on Windows
 

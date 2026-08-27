@@ -6,8 +6,11 @@
 #include "Components/TextRenderComponent.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Net/UnrealNetwork.h"
+#include "GameFramework/PlayerController.h"
 #include "UObject/ConstructorHelpers.h"
 
 AVTTCharacterPiece::AVTTCharacterPiece()
@@ -87,6 +90,18 @@ AVTTCharacterPiece::AVTTCharacterPiece()
     TargetLocation = FVector::ZeroVector;
 }
 
+void AVTTCharacterPiece::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(AVTTCharacterPiece, DisplayName);
+    DOREPLIFETIME(AVTTCharacterPiece, MaxHP);
+    DOREPLIFETIME(AVTTCharacterPiece, CurrentHP);
+    DOREPLIFETIME(AVTTCharacterPiece, PieceColour);
+    DOREPLIFETIME(AVTTCharacterPiece, SizeSquares);
+    DOREPLIFETIME(AVTTCharacterPiece, ConditionText);
+    DOREPLIFETIME(AVTTCharacterPiece, bHiddenFromPlayers);
+}
+
 void AVTTCharacterPiece::InitialisePiece(const FString& NewName, int32 NewMaxHP, const FLinearColor& NewColour)
 {
     DisplayName = NewName;
@@ -95,6 +110,7 @@ void AVTTCharacterPiece::InitialisePiece(const FString& NewName, int32 NewMaxHP,
     PieceColour = NewColour;
     ApplyColour(NewColour);
     UpdateLabels();
+    ForceNetUpdate();
 }
 
 void AVTTCharacterPiece::SetSelected(bool bNewSelected)
@@ -112,6 +128,7 @@ void AVTTCharacterPiece::ChangeHP(int32 Delta)
 {
     CurrentHP = FMath::Clamp(CurrentHP + Delta, 0, MaxHP);
     UpdateLabels();
+    ForceNetUpdate();
 }
 
 void AVTTCharacterPiece::CycleSize()
@@ -134,6 +151,7 @@ void AVTTCharacterPiece::SetSizeSquares(int32 NewSize)
     NameText->SetRelativeLocation(FVector(0.0f, 0.0f, 180.0f * BodyScale));
     HPText->SetRelativeLocation(FVector(0.0f, 0.0f, 152.0f * BodyScale));
     UpdateLabels();
+    ForceNetUpdate();
 }
 
 void AVTTCharacterPiece::CycleCondition()
@@ -144,12 +162,14 @@ void AVTTCharacterPiece::CycleCondition()
     const int32 CurrentIndex = Conditions.IndexOfByKey(ConditionText);
     ConditionText = Conditions[(CurrentIndex + 1) % Conditions.Num()];
     UpdateLabels();
+    ForceNetUpdate();
 }
 
 void AVTTCharacterPiece::ToggleHiddenFromPlayers()
 {
     bHiddenFromPlayers = !bHiddenFromPlayers;
     UpdateLabels();
+    ForceNetUpdate();
 }
 
 void AVTTCharacterPiece::Tick(float DeltaSeconds)
@@ -201,5 +221,16 @@ void AVTTCharacterPiece::ApplyColour(const FLinearColor& NewColour)
                 DynamicMaterial->SetVectorParameterValue(TEXT("Color"), NewColour);
             }
         }
+    }
+}
+
+void AVTTCharacterPiece::OnRep_PieceData()
+{
+    ApplyColour(PieceColour);
+    SetSizeSquares(SizeSquares);
+    UpdateLabels();
+    if (APlayerController* LocalController = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr)
+    {
+        SetActorHiddenInGame(bHiddenFromPlayers && !LocalController->HasAuthority());
     }
 }

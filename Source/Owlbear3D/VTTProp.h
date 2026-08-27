@@ -26,8 +26,9 @@ class OWLBEAR3D_API AVTTProp : public AActor
 
 public:
     AVTTProp();
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VTT|Prop")
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_PropType, Category="VTT|Prop")
     EVTTPropType PropType = EVTTPropType::Crate;
 
     void InitialiseProp(EVTTPropType NewType);
@@ -56,4 +57,7 @@ private:
 
     UPROPERTY()
     TObjectPtr<UStaticMesh> ConeAsset;
+
+    UFUNCTION()
+    void OnRep_PropType();
 };
