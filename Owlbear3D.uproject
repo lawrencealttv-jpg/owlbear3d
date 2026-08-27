@@ -1,0 +1,14 @@
+{
+  "FileVersion": 3,
+  "EngineAssociation": "5.8",
+  "Category": "Games",
+  "Description": "A lightweight 3D virtual tabletop and runtime map maker.",
+  "Modules": [
+    {
+      "Name": "Owlbear3D",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    }
+  ]
+}
+
