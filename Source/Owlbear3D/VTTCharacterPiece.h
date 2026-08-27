@@ -31,6 +31,11 @@ public:
     UFUNCTION(BlueprintCallable, Category="VTT|Piece")
     void ChangeHP(int32 Delta);
 
+    void CycleSize();
+    void CycleCondition();
+    void ToggleHiddenFromPlayers();
+    void SetSizeSquares(int32 NewSize);
+
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VTT|Piece")
     FString DisplayName = TEXT("Adventurer");
 
@@ -42,6 +47,15 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VTT|Piece")
     FLinearColor PieceColour = FLinearColor::White;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VTT|Piece")
+    int32 SizeSquares = 1;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VTT|Piece")
+    FString ConditionText;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VTT|Piece")
+    bool bHiddenFromPlayers = false;
 
 private:
     UPROPERTY(VisibleAnywhere)

@@ -10,8 +10,9 @@ public class Owlbear3D : ModuleRules
             "Core",
             "CoreUObject",
             "Engine",
-            "InputCore"
+            "InputCore",
+            "Slate",
+            "SlateCore"
         });
     }
 }
-

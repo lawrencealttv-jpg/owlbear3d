@@ -23,6 +23,57 @@ struct FVTTPieceSaveData
 
     UPROPERTY()
     FVector Location = FVector::ZeroVector;
+
+    UPROPERTY()
+    FRotator Rotation = FRotator::ZeroRotator;
+
+    UPROPERTY()
+    int32 SizeSquares = 1;
+
+    UPROPERTY()
+    FString ConditionText;
+
+    UPROPERTY()
+    bool bHiddenFromPlayers = false;
+};
+
+USTRUCT(BlueprintType)
+struct FVTTPropSaveData
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    uint8 PropType = 0;
+
+    UPROPERTY()
+    FVector Location = FVector::ZeroVector;
+
+    UPROPERTY()
+    FRotator Rotation = FRotator::ZeroRotator;
+};
+
+USTRUCT(BlueprintType)
+struct FVTTMapSnapshot
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    TArray<FIntPoint> ActiveCells;
+
+    UPROPERTY()
+    TArray<FIntVector> WallEdges;
+
+    UPROPERTY()
+    TArray<FIntVector> DoorEdges;
+
+    UPROPERTY()
+    TArray<FIntPoint> FoggedCells;
+
+    UPROPERTY()
+    TArray<FVTTPieceSaveData> Pieces;
+
+    UPROPERTY()
+    TArray<FVTTPropSaveData> Props;
 };
 
 UCLASS()
@@ -32,12 +83,5 @@ class OWLBEAR3D_API UVTTSaveGame : public USaveGame
 
 public:
     UPROPERTY()
-    TArray<FIntPoint> ActiveCells;
-
-    UPROPERTY()
-    TArray<FIntVector> WallEdges;
-
-    UPROPERTY()
-    TArray<FVTTPieceSaveData> Pieces;
+    FVTTMapSnapshot Map;
 };
-

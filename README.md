@@ -13,6 +13,14 @@ The project creates its first playable room entirely at runtime. No custom map o
 - Visible names and editable HP
 - Runtime floor-tile editing
 - Runtime wall-edge placement
+- Click-drag floor, wall, door, and fog brushes
+- Placeable crate, table, column, statue, and chest props
+- Select, move, rotate, copy, and delete props and pieces
+- Piece sizes, conditions, and GM-hidden markers
+- 50-step undo/redo
+- Autosave after editing
+- On-screen GM toolbar
+- Distance ruler, d20 roller, and lightweight initiative tracker
 - Save/load floors, walls, pieces, colours, names, and HP
 - Multiplayer-ready actor structure (network session UI comes later)
 
@@ -27,9 +35,18 @@ The project creates its first playable room entirely at runtime. No custom map o
 | `+` / `-` | Change selected piece HP |
 | `Delete` | Remove selected piece |
 | `B` | Toggle build mode |
-| `T` | Switch between floor and wall tools |
-| Left click in floor mode | Add/remove floor tile |
-| Left click near a tile edge in wall mode | Add/remove wall |
+| Toolbar / `T` | Cycle floor, wall, door, prop, and fog tools |
+| Click and drag | Paint or erase with the active build tool |
+| `P` | Cycle prop type |
+| `R` | Rotate selected piece/prop |
+| `C` | Duplicate selected piece/prop |
+| `Z` / `Y` | Undo/redo |
+| `K` | Cycle selected piece size |
+| `N` | Cycle selected piece condition |
+| `H` | Mark selected piece hidden from players |
+| `M` | Toggle ruler |
+| `L` | Roll d20 |
+| `I` / `O` | Add selected piece to initiative / next turn |
 | `F5` | Save current map |
 | `F9` | Load current map |
 | `WASD` | Pan camera |
@@ -57,7 +74,7 @@ Maps will be serialised as runtime data rather than custom `.umap` files. This k
 
 ## Next milestone
 
-- Drag-to-draw walls and place doors
-- Proper in-game GM toolbar
+- Campaign and multi-scene browser
+- Direct host/join multiplayer
 - Character/monster asset library
-- Host/join multiplayer session
+- Proper visibility separation between GM and players

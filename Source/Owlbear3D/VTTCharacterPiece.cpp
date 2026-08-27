@@ -114,6 +114,44 @@ void AVTTCharacterPiece::ChangeHP(int32 Delta)
     UpdateLabels();
 }
 
+void AVTTCharacterPiece::CycleSize()
+{
+    SetSizeSquares(SizeSquares % 4 + 1);
+}
+
+void AVTTCharacterPiece::SetSizeSquares(int32 NewSize)
+{
+    SizeSquares = FMath::Clamp(NewSize, 1, 4);
+    const float BodyScale = 1.0f + (SizeSquares - 1) * 0.45f;
+    BaseMesh->SetRelativeScale3D(FVector(0.42f * SizeSquares, 0.42f * SizeSquares, 0.08f));
+    BodyMesh->SetRelativeScale3D(FVector(0.34f * BodyScale, 0.26f * BodyScale, 0.72f * BodyScale));
+    BodyMesh->SetRelativeLocation(FVector(0.0f, 0.0f, 60.0f * BodyScale));
+    HeadMesh->SetRelativeScale3D(FVector(0.32f * BodyScale));
+    HeadMesh->SetRelativeLocation(FVector(0.0f, 0.0f, 122.0f * BodyScale));
+    SelectionMesh->SetRelativeScale3D(FVector(0.52f * SizeSquares, 0.52f * SizeSquares, 0.025f));
+    HitCapsule->SetCapsuleSize(34.0f * BodyScale, 72.0f * BodyScale);
+    HitCapsule->SetRelativeLocation(FVector(0.0f, 0.0f, 72.0f * BodyScale));
+    NameText->SetRelativeLocation(FVector(0.0f, 0.0f, 180.0f * BodyScale));
+    HPText->SetRelativeLocation(FVector(0.0f, 0.0f, 152.0f * BodyScale));
+    UpdateLabels();
+}
+
+void AVTTCharacterPiece::CycleCondition()
+{
+    static const TArray<FString> Conditions = {
+        TEXT(""), TEXT("Poisoned"), TEXT("Stunned"), TEXT("Prone"), TEXT("Concentrating"), TEXT("Restrained")
+    };
+    const int32 CurrentIndex = Conditions.IndexOfByKey(ConditionText);
+    ConditionText = Conditions[(CurrentIndex + 1) % Conditions.Num()];
+    UpdateLabels();
+}
+
+void AVTTCharacterPiece::ToggleHiddenFromPlayers()
+{
+    bHiddenFromPlayers = !bHiddenFromPlayers;
+    UpdateLabels();
+}
+
 void AVTTCharacterPiece::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
@@ -139,7 +177,12 @@ void AVTTCharacterPiece::Tick(float DeltaSeconds)
 
 void AVTTCharacterPiece::UpdateLabels()
 {
-    NameText->SetText(FText::FromString(DisplayName));
+    FString Label = bHiddenFromPlayers ? DisplayName + TEXT(" [HIDDEN]") : DisplayName;
+    if (!ConditionText.IsEmpty())
+    {
+        Label += FString::Printf(TEXT(" [%s]"), *ConditionText);
+    }
+    NameText->SetText(FText::FromString(Label));
     HPText->SetText(FText::FromString(FString::Printf(TEXT("%d / %d HP"), CurrentHP, MaxHP)));
 
     const float Ratio = MaxHP > 0 ? static_cast<float>(CurrentHP) / static_cast<float>(MaxHP) : 0.0f;

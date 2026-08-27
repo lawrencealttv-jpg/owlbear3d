@@ -37,12 +37,25 @@ public:
     UFUNCTION(BlueprintCallable, Category="VTT|Grid")
     void ToggleCell(const FIntPoint& Grid);
 
+    void SetCellActive(const FIntPoint& Grid, bool bActive);
+
     UFUNCTION(BlueprintCallable, Category="VTT|Grid")
     bool ToggleWallAtWorldLocation(const FVector& WorldLocation);
 
+    bool FindNearestEdge(const FVector& WorldLocation, FIntVector& OutEdge) const;
+    bool HasWall(const FIntVector& Edge) const;
+    bool HasDoor(const FIntVector& Edge) const;
+    void SetWall(const FIntVector& Edge, bool bActive);
+    void SetDoor(const FIntVector& Edge, bool bActive);
+    void SetFogged(const FIntPoint& Grid, bool bFogged);
+    bool IsFogged(const FIntPoint& Grid) const;
+
     TArray<FIntPoint> GetActiveCells() const;
     TArray<FIntVector> GetWallEdges() const;
-    void ApplyLayout(const TArray<FIntPoint>& NewActiveCells, const TArray<FIntVector>& NewWallEdges);
+    TArray<FIntVector> GetDoorEdges() const;
+    TArray<FIntPoint> GetFoggedCells() const;
+    void ApplyLayout(const TArray<FIntPoint>& NewActiveCells, const TArray<FIntVector>& NewWallEdges,
+        const TArray<FIntVector>& NewDoorEdges, const TArray<FIntPoint>& NewFoggedCells);
 
 protected:
     virtual void BeginPlay() override;
@@ -60,10 +73,21 @@ private:
     UPROPERTY(VisibleAnywhere)
     TObjectPtr<UInstancedStaticMeshComponent> WallInstances;
 
+    UPROPERTY(VisibleAnywhere)
+    TObjectPtr<UInstancedStaticMeshComponent> DoorInstances;
+
+    UPROPERTY(VisibleAnywhere)
+    TObjectPtr<UInstancedStaticMeshComponent> FogInstances;
+
     TSet<FIntPoint> ActiveCells;
     TSet<FIntVector> WallEdges;
+    TSet<FIntVector> DoorEdges;
+    TSet<FIntPoint> FoggedCells;
 
     void BuildInitialRoom();
     void RebuildFloorInstances();
     void RebuildWallInstances();
+    void RebuildDoorInstances();
+    void RebuildFogInstances();
+    bool IsValidEdge(const FIntVector& Edge) const;
 };
