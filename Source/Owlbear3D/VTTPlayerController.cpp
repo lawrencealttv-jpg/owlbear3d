@@ -4,6 +4,7 @@
 #include "VTTCharacterPiece.h"
 #include "Components/InputComponent.h"
 #include "Engine/Engine.h"
+#include "Engine/World.h"
 #include "EngineUtils.h"
 
 AVTTPlayerController::AVTTPlayerController()
@@ -181,4 +182,3 @@ void AVTTPlayerController::ShowControls() const
             TEXT("LMB select/move | 1 hero | 2 goblin | +/- HP | Delete | B build mode | WASD pan | Q/E rotate | Wheel zoom"));
     }
 }
-

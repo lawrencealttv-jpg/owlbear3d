@@ -5,6 +5,7 @@
 #include "VTTCameraPawn.generated.h"
 
 class UCameraComponent;
+class USceneComponent;
 class USpringArmComponent;
 
 UCLASS()
@@ -38,4 +39,3 @@ private:
     void RotateLeft();
     void RotateRight();
 };
-

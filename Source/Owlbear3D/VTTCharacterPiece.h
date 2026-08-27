@@ -5,6 +5,7 @@
 #include "VTTCharacterPiece.generated.h"
 
 class UCapsuleComponent;
+class USceneComponent;
 class UStaticMeshComponent;
 class UTextRenderComponent;
 
@@ -41,6 +42,9 @@ public:
 
 private:
     UPROPERTY(VisibleAnywhere)
+    TObjectPtr<USceneComponent> SceneRoot;
+
+    UPROPERTY(VisibleAnywhere)
     TObjectPtr<UCapsuleComponent> HitCapsule;
 
     UPROPERTY(VisibleAnywhere)
@@ -67,4 +71,3 @@ private:
     void UpdateLabels();
     void ApplyColour(const FLinearColor& NewColour);
 };
-

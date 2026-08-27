@@ -6,6 +6,7 @@
 
 class UBoxComponent;
 class UInstancedStaticMeshComponent;
+class USceneComponent;
 
 UCLASS()
 class OWLBEAR3D_API AVTTBoard : public AActor
@@ -58,4 +59,3 @@ private:
     void RebuildFloorInstances();
     void RebuildBoundaryWalls();
 };
-

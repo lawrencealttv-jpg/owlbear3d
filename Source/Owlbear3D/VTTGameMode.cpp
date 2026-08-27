@@ -9,6 +9,7 @@
 #include "Engine/DirectionalLight.h"
 #include "Engine/SkyLight.h"
 #include "Engine/World.h"
+#include "GameFramework/PlayerController.h"
 
 AVTTGameMode::AVTTGameMode()
 {

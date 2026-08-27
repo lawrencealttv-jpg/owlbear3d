@@ -1,8 +1,10 @@
 #include "VTTCharacterPiece.h"
 
 #include "Components/CapsuleComponent.h"
+#include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
+#include "Camera/PlayerCameraManager.h"
 #include "Engine/StaticMesh.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -14,39 +16,42 @@ AVTTCharacterPiece::AVTTCharacterPiece()
     bReplicates = true;
     SetReplicateMovement(true);
 
+    SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
+    SetRootComponent(SceneRoot);
+
     HitCapsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("HitCapsule"));
+    HitCapsule->SetupAttachment(SceneRoot);
     HitCapsule->InitCapsuleSize(34.0f, 72.0f);
     HitCapsule->SetRelativeLocation(FVector(0.0f, 0.0f, 72.0f));
     HitCapsule->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
     HitCapsule->SetCollisionResponseToAllChannels(ECR_Ignore);
     HitCapsule->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-    SetRootComponent(HitCapsule);
 
     static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
 
     BaseMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BaseMesh"));
-    BaseMesh->SetupAttachment(HitCapsule);
-    BaseMesh->SetRelativeLocation(FVector(0.0f, 0.0f, -68.0f));
+    BaseMesh->SetupAttachment(SceneRoot);
+    BaseMesh->SetRelativeLocation(FVector(0.0f, 0.0f, 4.0f));
     BaseMesh->SetRelativeScale3D(FVector(0.42f, 0.42f, 0.08f));
     BaseMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
     BodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BodyMesh"));
-    BodyMesh->SetupAttachment(HitCapsule);
-    BodyMesh->SetRelativeLocation(FVector(0.0f, 0.0f, -12.0f));
+    BodyMesh->SetupAttachment(SceneRoot);
+    BodyMesh->SetRelativeLocation(FVector(0.0f, 0.0f, 60.0f));
     BodyMesh->SetRelativeScale3D(FVector(0.34f, 0.26f, 0.72f));
     BodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
     HeadMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HeadMesh"));
-    HeadMesh->SetupAttachment(HitCapsule);
-    HeadMesh->SetRelativeLocation(FVector(0.0f, 0.0f, 50.0f));
+    HeadMesh->SetupAttachment(SceneRoot);
+    HeadMesh->SetRelativeLocation(FVector(0.0f, 0.0f, 122.0f));
     HeadMesh->SetRelativeScale3D(FVector(0.32f));
     HeadMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
     SelectionMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SelectionMesh"));
-    SelectionMesh->SetupAttachment(HitCapsule);
-    SelectionMesh->SetRelativeLocation(FVector(0.0f, 0.0f, -72.0f));
+    SelectionMesh->SetupAttachment(SceneRoot);
+    SelectionMesh->SetRelativeLocation(FVector(0.0f, 0.0f, 1.5f));
     SelectionMesh->SetRelativeScale3D(FVector(0.52f, 0.52f, 0.025f));
     SelectionMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     SelectionMesh->SetVisibility(false);
@@ -66,15 +71,15 @@ AVTTCharacterPiece::AVTTCharacterPiece()
     }
 
     NameText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("NameText"));
-    NameText->SetupAttachment(HitCapsule);
-    NameText->SetRelativeLocation(FVector(0.0f, 0.0f, 108.0f));
+    NameText->SetupAttachment(SceneRoot);
+    NameText->SetRelativeLocation(FVector(0.0f, 0.0f, 180.0f));
     NameText->SetHorizontalAlignment(EHTA_Center);
     NameText->SetWorldSize(26.0f);
     NameText->SetTextRenderColor(FColor::White);
 
     HPText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("HPText"));
-    HPText->SetupAttachment(HitCapsule);
-    HPText->SetRelativeLocation(FVector(0.0f, 0.0f, 82.0f));
+    HPText->SetupAttachment(SceneRoot);
+    HPText->SetRelativeLocation(FVector(0.0f, 0.0f, 152.0f));
     HPText->SetHorizontalAlignment(EHTA_Center);
     HPText->SetWorldSize(22.0f);
     HPText->SetTextRenderColor(FColor(100, 255, 120));
@@ -154,4 +159,3 @@ void AVTTCharacterPiece::ApplyColour(const FLinearColor& NewColour)
         }
     }
 }
-
