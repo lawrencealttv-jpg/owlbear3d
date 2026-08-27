@@ -94,6 +94,7 @@ private:
     void CycleSelectedSize();
     void CycleSelectedCondition();
     void ToggleSelectedHidden();
+    void CycleSelectedVisual();
     void ToggleMeasure();
     void RollD20();
     void AddSelectedToInitiative();

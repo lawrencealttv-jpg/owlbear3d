@@ -87,6 +87,7 @@ void AVTTPlayerController::SetupInputComponent()
     InputComponent->BindAction(TEXT("RollD20"), IE_Pressed, this, &AVTTPlayerController::RollD20);
     InputComponent->BindAction(TEXT("AddInitiative"), IE_Pressed, this, &AVTTPlayerController::AddSelectedToInitiative);
     InputComponent->BindAction(TEXT("NextTurn"), IE_Pressed, this, &AVTTPlayerController::NextInitiativeTurn);
+    InputComponent->BindAction(TEXT("CycleVisual"), IE_Pressed, this, &AVTTPlayerController::CycleSelectedVisual);
 }
 
 void AVTTPlayerController::Tick(float DeltaSeconds)
@@ -367,6 +368,7 @@ void AVTTPlayerController::DuplicateSelected()
             Piece->SetSizeSquares(SelectedPiece->SizeSquares);
             Piece->ConditionText = SelectedPiece->ConditionText;
             Piece->bHiddenFromPlayers = SelectedPiece->bHiddenFromPlayers;
+            Piece->SetVisualType(SelectedPiece->VisualType);
             Piece->ChangeHP(0);
             SelectPiece(Piece);
         }
@@ -436,6 +438,16 @@ void AVTTPlayerController::ToggleSelectedHidden()
     {
         PushUndoState();
         SelectedPiece->ToggleHiddenFromPlayers();
+    }
+}
+
+void AVTTPlayerController::CycleSelectedVisual()
+{
+    if (!HasAuthority()) return;
+    if (SelectedPiece)
+    {
+        PushUndoState();
+        SelectedPiece->CycleVisualType();
     }
 }
 
@@ -762,6 +774,7 @@ FVTTMapSnapshot AVTTPlayerController::CaptureSnapshot() const
         PieceData.SizeSquares = It->SizeSquares;
         PieceData.ConditionText = It->ConditionText;
         PieceData.bHiddenFromPlayers = It->bHiddenFromPlayers;
+        PieceData.VisualType = static_cast<uint8>(It->VisualType);
         Snapshot.Pieces.Add(PieceData);
     }
 
@@ -815,6 +828,7 @@ void AVTTPlayerController::ApplySnapshot(const FVTTMapSnapshot& Snapshot)
             Piece->SetSizeSquares(PieceData.SizeSquares);
             Piece->ConditionText = PieceData.ConditionText;
             Piece->bHiddenFromPlayers = PieceData.bHiddenFromPlayers;
+            Piece->SetVisualType(static_cast<EVTTVisualType>(FMath::Min<uint8>(PieceData.VisualType, 10)));
             Piece->ChangeHP(0);
         }
     }
@@ -967,6 +981,7 @@ void AVTTPlayerController::BuildToolbar()
                     + SUniformGridPanel::Slot(3, 2)[MakeButton(TEXT("CONDITION"), [](AVTTPlayerController* C){ C->CycleSelectedCondition(); })]
                     + SUniformGridPanel::Slot(4, 2)[MakeButton(TEXT("HIDE"), [](AVTTPlayerController* C){ C->ToggleSelectedHidden(); })]
                     + SUniformGridPanel::Slot(5, 2)[MakeButton(TEXT("DELETE"), [](AVTTPlayerController* C){ C->DeleteSelected(); })]
+                    + SUniformGridPanel::Slot(5, 3)[MakeButton(TEXT("MODEL"), [](AVTTPlayerController* C){ C->CycleSelectedVisual(); })]
                     + SUniformGridPanel::Slot(6, 2)[MakeButton(TEXT("RULER"), [](AVTTPlayerController* C){ C->ToggleMeasure(); })]
                     + SUniformGridPanel::Slot(7, 2)[MakeButton(TEXT("D20"), [](AVTTPlayerController* C){ C->RollD20(); })]
                     + SUniformGridPanel::Slot(6, 0)[MakeButton(TEXT("INIT"), [](AVTTPlayerController* C){ C->AddSelectedToInitiative(); })]

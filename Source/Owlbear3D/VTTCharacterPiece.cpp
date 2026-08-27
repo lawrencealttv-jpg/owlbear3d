@@ -59,6 +59,11 @@ AVTTCharacterPiece::AVTTCharacterPiece()
     SelectionMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     SelectionMesh->SetVisibility(false);
 
+    ImportedVisualMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ImportedVisualMesh"));
+    ImportedVisualMesh->SetupAttachment(SceneRoot);
+    ImportedVisualMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    ImportedVisualMesh->SetVisibility(false);
+
     if (CylinderMesh.Succeeded())
     {
         BaseMesh->SetStaticMesh(CylinderMesh.Object);
@@ -100,6 +105,7 @@ void AVTTCharacterPiece::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
     DOREPLIFETIME(AVTTCharacterPiece, SizeSquares);
     DOREPLIFETIME(AVTTCharacterPiece, ConditionText);
     DOREPLIFETIME(AVTTCharacterPiece, bHiddenFromPlayers);
+    DOREPLIFETIME(AVTTCharacterPiece, VisualType);
 }
 
 void AVTTCharacterPiece::InitialisePiece(const FString& NewName, int32 NewMaxHP, const FLinearColor& NewColour)
@@ -108,7 +114,12 @@ void AVTTCharacterPiece::InitialisePiece(const FString& NewName, int32 NewMaxHP,
     MaxHP = FMath::Max(1, NewMaxHP);
     CurrentHP = MaxHP;
     PieceColour = NewColour;
+    if (NewName.Contains(TEXT("Goblin"), ESearchCase::IgnoreCase))
+    {
+        VisualType = EVTTVisualType::Goblin;
+    }
     ApplyColour(NewColour);
+    SetVisualType(VisualType);
     UpdateLabels();
     ForceNetUpdate();
 }
@@ -150,6 +161,7 @@ void AVTTCharacterPiece::SetSizeSquares(int32 NewSize)
     HitCapsule->SetRelativeLocation(FVector(0.0f, 0.0f, 72.0f * BodyScale));
     NameText->SetRelativeLocation(FVector(0.0f, 0.0f, 180.0f * BodyScale));
     HPText->SetRelativeLocation(FVector(0.0f, 0.0f, 152.0f * BodyScale));
+    ImportedVisualMesh->SetRelativeScale3D(FVector(BodyScale));
     UpdateLabels();
     ForceNetUpdate();
 }
@@ -169,6 +181,39 @@ void AVTTCharacterPiece::ToggleHiddenFromPlayers()
 {
     bHiddenFromPlayers = !bHiddenFromPlayers;
     UpdateLabels();
+    ForceNetUpdate();
+}
+
+void AVTTCharacterPiece::CycleVisualType()
+{
+    const int32 NextVisual = (static_cast<int32>(VisualType) + 1) % 11;
+    SetVisualType(static_cast<EVTTVisualType>(NextVisual));
+}
+
+void AVTTCharacterPiece::SetVisualType(EVTTVisualType NewVisualType)
+{
+    VisualType = NewVisualType;
+    static const TCHAR* AssetPaths[] = {
+        TEXT("/Game/StarterPack/Creatures/SM_Adventurer.SM_Adventurer"),
+        TEXT("/Game/StarterPack/Creatures/SM_Paladin.SM_Paladin"),
+        TEXT("/Game/StarterPack/Creatures/SM_Mage.SM_Mage"),
+        TEXT("/Game/StarterPack/Creatures/SM_Goblin.SM_Goblin"),
+        TEXT("/Game/StarterPack/Creatures/SM_Orc.SM_Orc"),
+        TEXT("/Game/StarterPack/Creatures/SM_Skeleton.SM_Skeleton"),
+        TEXT("/Game/StarterPack/Creatures/SM_Wolf.SM_Wolf"),
+        TEXT("/Game/StarterPack/Creatures/SM_Spider.SM_Spider"),
+        TEXT("/Game/StarterPack/Creatures/SM_Slime.SM_Slime"),
+        TEXT("/Game/StarterPack/Creatures/SM_Warforged.SM_Warforged"),
+        TEXT("/Game/StarterPack/Creatures/SM_Drake.SM_Drake")
+    };
+    const int32 Index = FMath::Clamp(static_cast<int32>(VisualType), 0, 10);
+    UStaticMesh* VisualAsset = LoadObject<UStaticMesh>(nullptr, AssetPaths[Index], nullptr, LOAD_NoWarn | LOAD_Quiet);
+    const bool bHasImportedVisual = VisualAsset != nullptr;
+    ImportedVisualMesh->SetStaticMesh(VisualAsset);
+    ImportedVisualMesh->SetVisibility(bHasImportedVisual);
+    BodyMesh->SetVisibility(!bHasImportedVisual);
+    HeadMesh->SetVisibility(!bHasImportedVisual);
+    BaseMesh->SetVisibility(!bHasImportedVisual);
     ForceNetUpdate();
 }
 
@@ -228,6 +273,7 @@ void AVTTCharacterPiece::OnRep_PieceData()
 {
     ApplyColour(PieceColour);
     SetSizeSquares(SizeSquares);
+    SetVisualType(VisualType);
     UpdateLabels();
     if (APlayerController* LocalController = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr)
     {

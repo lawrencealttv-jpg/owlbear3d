@@ -35,6 +35,9 @@ struct FVTTPieceSaveData
 
     UPROPERTY()
     bool bHiddenFromPlayers = false;
+
+    UPROPERTY()
+    uint8 VisualType = 0;
 };
 
 USTRUCT(BlueprintType)

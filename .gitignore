@@ -6,4 +6,6 @@ Saved/
 *.sln
 *.VC.db
 *.VC.opendb
-
+Tools/Blender/GeneratedFBX/
+__pycache__/
+*.pyc

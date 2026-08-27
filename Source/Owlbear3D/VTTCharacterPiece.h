@@ -9,6 +9,22 @@ class USceneComponent;
 class UStaticMeshComponent;
 class UTextRenderComponent;
 
+UENUM(BlueprintType)
+enum class EVTTVisualType : uint8
+{
+    Adventurer,
+    Paladin,
+    Mage,
+    Goblin,
+    Orc,
+    Skeleton,
+    Wolf,
+    Spider,
+    Slime,
+    Warforged,
+    Drake
+};
+
 UCLASS()
 class OWLBEAR3D_API AVTTCharacterPiece : public AActor
 {
@@ -36,6 +52,8 @@ public:
     void CycleCondition();
     void ToggleHiddenFromPlayers();
     void SetSizeSquares(int32 NewSize);
+    void CycleVisualType();
+    void SetVisualType(EVTTVisualType NewVisualType);
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_PieceData, Category="VTT|Piece")
     FString DisplayName = TEXT("Adventurer");
@@ -58,6 +76,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_PieceData, Category="VTT|Piece")
     bool bHiddenFromPlayers = false;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_PieceData, Category="VTT|Piece")
+    EVTTVisualType VisualType = EVTTVisualType::Adventurer;
+
 private:
     UPROPERTY(VisibleAnywhere)
     TObjectPtr<USceneComponent> SceneRoot;
@@ -76,6 +97,9 @@ private:
 
     UPROPERTY(VisibleAnywhere)
     TObjectPtr<UStaticMeshComponent> SelectionMesh;
+
+    UPROPERTY(VisibleAnywhere)
+    TObjectPtr<UStaticMeshComponent> ImportedVisualMesh;
 
     UPROPERTY(VisibleAnywhere)
     TObjectPtr<UTextRenderComponent> NameText;

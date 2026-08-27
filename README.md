@@ -26,6 +26,8 @@ The project creates its first playable room entirely at runtime. No custom map o
 - Direct host/join multiplayer foundation
 - GM-only editing with player piece movement
 - Hidden pieces remain visible to the GM but disappear for remote players
+- Blender generator for 11 coherent low-poly starter miniatures
+- Automatic fallback to primitive miniatures until generated models are imported
 - Save/load floors, walls, pieces, colours, names, and HP
 - Multiplayer-ready actor structure (network session UI comes later)
 
@@ -49,6 +51,7 @@ The project creates its first playable room entirely at runtime. No custom map o
 | `K` | Cycle selected piece size |
 | `N` | Cycle selected piece condition |
 | `H` | Mark selected piece hidden from players |
+| `V` / **Model** | Cycle the selected piece's 3D model |
 | `M` | Toggle ruler |
 | `L` | Roll d20 |
 | `I` / `O` | Add selected piece to initiative / next turn |
