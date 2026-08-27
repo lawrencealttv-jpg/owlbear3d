@@ -56,7 +56,19 @@ void AVTTBoard::BuildInitialRoom()
     }
 
     RebuildFloorInstances();
-    RebuildBoundaryWalls();
+
+    WallEdges.Empty();
+    for (int32 X = 0; X < GridWidth; ++X)
+    {
+        WallEdges.Add(FIntVector(X, 0, 0));
+        WallEdges.Add(FIntVector(X, GridHeight, 0));
+    }
+    for (int32 Y = 0; Y < GridHeight; ++Y)
+    {
+        WallEdges.Add(FIntVector(0, Y, 1));
+        WallEdges.Add(FIntVector(GridWidth, Y, 1));
+    }
+    RebuildWallInstances();
 }
 
 bool AVTTBoard::WorldToGrid(const FVector& WorldLocation, FIntPoint& OutGrid) const
@@ -111,6 +123,78 @@ void AVTTBoard::ToggleCell(const FIntPoint& Grid)
     RebuildFloorInstances();
 }
 
+bool AVTTBoard::ToggleWallAtWorldLocation(const FVector& WorldLocation)
+{
+    FIntPoint Grid;
+    if (!WorldToGrid(WorldLocation, Grid))
+    {
+        return false;
+    }
+
+    const FVector Local = GetActorTransform().InverseTransformPosition(WorldLocation);
+    const FVector CellCentre = GetActorTransform().InverseTransformPosition(GridToWorld(Grid));
+    const FVector2D FromCentre(Local.X - CellCentre.X, Local.Y - CellCentre.Y);
+
+    FIntVector Edge;
+    if (FMath::Abs(FromCentre.X) > FMath::Abs(FromCentre.Y))
+    {
+        const int32 EdgeX = FromCentre.X >= 0.0f ? Grid.X + 1 : Grid.X;
+        Edge = FIntVector(EdgeX, Grid.Y, 1);
+    }
+    else
+    {
+        const int32 EdgeY = FromCentre.Y >= 0.0f ? Grid.Y + 1 : Grid.Y;
+        Edge = FIntVector(Grid.X, EdgeY, 0);
+    }
+
+    if (WallEdges.Contains(Edge))
+    {
+        WallEdges.Remove(Edge);
+    }
+    else
+    {
+        WallEdges.Add(Edge);
+    }
+    RebuildWallInstances();
+    return true;
+}
+
+TArray<FIntPoint> AVTTBoard::GetActiveCells() const
+{
+    return ActiveCells.Array();
+}
+
+TArray<FIntVector> AVTTBoard::GetWallEdges() const
+{
+    return WallEdges.Array();
+}
+
+void AVTTBoard::ApplyLayout(const TArray<FIntPoint>& NewActiveCells, const TArray<FIntVector>& NewWallEdges)
+{
+    ActiveCells.Empty();
+    for (const FIntPoint& Cell : NewActiveCells)
+    {
+        if (Cell.X >= 0 && Cell.X < GridWidth && Cell.Y >= 0 && Cell.Y < GridHeight)
+        {
+            ActiveCells.Add(Cell);
+        }
+    }
+
+    WallEdges.Empty();
+    for (const FIntVector& Edge : NewWallEdges)
+    {
+        const bool bHorizontalValid = Edge.Z == 0 && Edge.X >= 0 && Edge.X < GridWidth && Edge.Y >= 0 && Edge.Y <= GridHeight;
+        const bool bVerticalValid = Edge.Z == 1 && Edge.X >= 0 && Edge.X <= GridWidth && Edge.Y >= 0 && Edge.Y < GridHeight;
+        if (bHorizontalValid || bVerticalValid)
+        {
+            WallEdges.Add(Edge);
+        }
+    }
+
+    RebuildFloorInstances();
+    RebuildWallInstances();
+}
+
 void AVTTBoard::RebuildFloorInstances()
 {
     FloorInstances->ClearInstances();
@@ -124,16 +208,25 @@ void AVTTBoard::RebuildFloorInstances()
     }
 }
 
-void AVTTBoard::RebuildBoundaryWalls()
+void AVTTBoard::RebuildWallInstances()
 {
     WallInstances->ClearInstances();
-    const float HalfWidth = GridWidth * TileSize * 0.5f;
-    const float HalfHeight = GridHeight * TileSize * 0.5f;
-    const FVector HorizontalScale(HalfWidth / 50.0f, 0.08f, 0.6f);
-    const FVector VerticalScale(0.08f, HalfHeight / 50.0f, 0.6f);
+    const float MinX = -GridWidth * TileSize * 0.5f;
+    const float MinY = -GridHeight * TileSize * 0.5f;
+    const FVector HorizontalScale(TileSize / 100.0f * 0.98f, 0.08f, 0.6f);
+    const FVector VerticalScale(0.08f, TileSize / 100.0f * 0.98f, 0.6f);
 
-    WallInstances->AddInstance(FTransform(FRotator::ZeroRotator, FVector(0.0f, -HalfHeight, 60.0f), HorizontalScale));
-    WallInstances->AddInstance(FTransform(FRotator::ZeroRotator, FVector(0.0f, HalfHeight, 60.0f), HorizontalScale));
-    WallInstances->AddInstance(FTransform(FRotator::ZeroRotator, FVector(-HalfWidth, 0.0f, 60.0f), VerticalScale));
-    WallInstances->AddInstance(FTransform(FRotator::ZeroRotator, FVector(HalfWidth, 0.0f, 60.0f), VerticalScale));
+    for (const FIntVector& Edge : WallEdges)
+    {
+        if (Edge.Z == 0)
+        {
+            const FVector Location(MinX + (Edge.X + 0.5f) * TileSize, MinY + Edge.Y * TileSize, 60.0f);
+            WallInstances->AddInstance(FTransform(FRotator::ZeroRotator, Location, HorizontalScale));
+        }
+        else
+        {
+            const FVector Location(MinX + Edge.X * TileSize, MinY + (Edge.Y + 0.5f) * TileSize, 60.0f);
+            WallInstances->AddInstance(FTransform(FRotator::ZeroRotator, Location, VerticalScale));
+        }
+    }
 }

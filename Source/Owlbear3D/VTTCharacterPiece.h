@@ -40,6 +40,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VTT|Piece")
     int32 CurrentHP = 20;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VTT|Piece")
+    FLinearColor PieceColour = FLinearColor::White;
+
 private:
     UPROPERTY(VisibleAnywhere)
     TObjectPtr<USceneComponent> SceneRoot;

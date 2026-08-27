@@ -7,6 +7,12 @@
 class AVTTBoard;
 class AVTTCharacterPiece;
 
+enum class EVTTBuildTool : uint8
+{
+    Floor,
+    Wall
+};
+
 UCLASS()
 class OWLBEAR3D_API AVTTPlayerController : public APlayerController
 {
@@ -27,6 +33,7 @@ private:
     TObjectPtr<AVTTCharacterPiece> SelectedPiece;
 
     bool bBuildMode = false;
+    EVTTBuildTool BuildTool = EVTTBuildTool::Floor;
     int32 HeroCount = 1;
     int32 MonsterCount = 1;
 
@@ -38,8 +45,10 @@ private:
     void HealSelected();
     void DeleteSelected();
     void ToggleBuildMode();
+    void CycleBuildTool();
+    void SaveMap();
+    void LoadMap();
     bool GetCursorGrid(FIntPoint& OutGrid, FVector& OutWorld) const;
     void SelectPiece(AVTTCharacterPiece* NewSelection);
     void ShowControls() const;
 };
-

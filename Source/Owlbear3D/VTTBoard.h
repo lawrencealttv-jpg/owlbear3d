@@ -37,6 +37,13 @@ public:
     UFUNCTION(BlueprintCallable, Category="VTT|Grid")
     void ToggleCell(const FIntPoint& Grid);
 
+    UFUNCTION(BlueprintCallable, Category="VTT|Grid")
+    bool ToggleWallAtWorldLocation(const FVector& WorldLocation);
+
+    TArray<FIntPoint> GetActiveCells() const;
+    TArray<FIntVector> GetWallEdges() const;
+    void ApplyLayout(const TArray<FIntPoint>& NewActiveCells, const TArray<FIntVector>& NewWallEdges);
+
 protected:
     virtual void BeginPlay() override;
 
@@ -54,8 +61,9 @@ private:
     TObjectPtr<UInstancedStaticMeshComponent> WallInstances;
 
     TSet<FIntPoint> ActiveCells;
+    TSet<FIntVector> WallEdges;
 
     void BuildInitialRoom();
     void RebuildFloorInstances();
-    void RebuildBoundaryWalls();
+    void RebuildWallInstances();
 };

@@ -12,6 +12,8 @@ The project creates its first playable room entirely at runtime. No custom map o
 - Spawn simple hero and goblin pieces
 - Visible names and editable HP
 - Runtime floor-tile editing
+- Runtime wall-edge placement
+- Save/load floors, walls, pieces, colours, names, and HP
 - Multiplayer-ready actor structure (network session UI comes later)
 
 ## Controls
@@ -25,7 +27,11 @@ The project creates its first playable room entirely at runtime. No custom map o
 | `+` / `-` | Change selected piece HP |
 | `Delete` | Remove selected piece |
 | `B` | Toggle build mode |
-| Left click in build mode | Add/remove floor tile |
+| `T` | Switch between floor and wall tools |
+| Left click in floor mode | Add/remove floor tile |
+| Left click near a tile edge in wall mode | Add/remove wall |
+| `F5` | Save current map |
+| `F9` | Load current map |
 | `WASD` | Pan camera |
 | `Q` / `E` | Rotate camera 45 degrees |
 | Mouse wheel | Zoom |
@@ -51,9 +57,7 @@ Maps will be serialised as runtime data rather than custom `.umap` files. This k
 
 ## Next milestone
 
-- Save/load the edited board and pieces
 - Drag-to-draw walls and place doors
 - Proper in-game GM toolbar
 - Character/monster asset library
 - Host/join multiplayer session
-

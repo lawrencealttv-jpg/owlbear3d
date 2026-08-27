@@ -92,6 +92,7 @@ void AVTTCharacterPiece::InitialisePiece(const FString& NewName, int32 NewMaxHP,
     DisplayName = NewName;
     MaxHP = FMath::Max(1, NewMaxHP);
     CurrentHP = MaxHP;
+    PieceColour = NewColour;
     ApplyColour(NewColour);
     UpdateLabels();
 }
